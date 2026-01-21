@@ -1,0 +1,5 @@
+%syntax-version=1.0.0
+%project=todo
+%uri=https://github.com/smunozfinmaq/santiago_munoz_todo_app/tree/main/todo/db
+
+appschema 2026-01-20T14:15:00Z Santiago Munoz <sm@example.com> # Initialize schema
