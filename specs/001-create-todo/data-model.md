@@ -19,13 +19,15 @@ Represented in `write/src/domain/model.py`.
 ## Database Schema (Write Side)
 
 ```sql
-CREATE TYPE santiago_munoz_todo_priority AS ENUM ('Low', 'Medium', 'High');
+CREATE SCHEMA IF NOT EXISTS santiago_munoz_write;
 
-CREATE TABLE santiago_munoz_todos (
+CREATE TYPE santiago_munoz_write.todo_priority AS ENUM ('Low', 'Medium', 'High');
+
+CREATE TABLE santiago_munoz_write.todos (
     id UUID PRIMARY KEY,
     title VARCHAR(500) NOT NULL,
     description VARCHAR(500),
-    priority santiago_munoz_todo_priority,
+    priority santiago_munoz_write.todo_priority,
     due_date TIMESTAMPTZ,
     is_completed BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -33,7 +35,7 @@ CREATE TABLE santiago_munoz_todos (
 );
 
 -- Idempotency tracking
-CREATE TABLE santiago_munoz_processed_commands (
+CREATE TABLE santiago_munoz_write.processed_commands (
     command_id UUID PRIMARY KEY,
     result_status INTEGER NOT NULL,
     result_body JSONB,
@@ -41,7 +43,7 @@ CREATE TABLE santiago_munoz_processed_commands (
 );
 
 -- Outbox for CQRS events
-CREATE TABLE santiago_munoz_outbox (
+CREATE TABLE santiago_munoz_write.outbox (
     id BIGSERIAL PRIMARY KEY,
     aggregate_id UUID NOT NULL,
     event_type VARCHAR(100) NOT NULL,

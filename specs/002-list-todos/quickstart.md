@@ -12,7 +12,7 @@
 2. **Database Setup**:
    The read models need to be initialized. For local testing, use a PostgreSQL container.
    ```bash
-   # Run the read schema deployment script located in todo/db/deploy/read_model.sql (to be created)
+   # Run the read schema deployment script located in todo/db/deploy/create_read_schema.sql
    ```
 
 3. **Running Tests**:

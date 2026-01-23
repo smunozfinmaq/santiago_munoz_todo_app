@@ -62,16 +62,16 @@ def test_create_todo_e2e_flow(mock_db, mock_context):
     
     # 2. Verify Database Calls
     # Check if idempotency was checked
-    assert "SELECT result_status, result_body FROM santiago_munoz_processed_commands" in mock_db.execute.call_args_list[0][0][0]
+    assert "SELECT result_status, result_body FROM santiago_munoz_write.processed_commands" in mock_db.execute.call_args_list[0][0][0]
     
     # Check if Todo was inserted
-    assert "INSERT INTO santiago_munoz_todos" in mock_db.execute.call_args_list[1][0][0]
+    assert "INSERT INTO santiago_munoz_write.todos" in mock_db.execute.call_args_list[1][0][0]
     
     # Check if Outbox was inserted
-    assert "INSERT INTO santiago_munoz_outbox" in mock_db.execute.call_args_list[2][0][0]
+    assert "INSERT INTO santiago_munoz_write.outbox" in mock_db.execute.call_args_list[2][0][0]
     
     # Check if Command was recorded
-    assert "INSERT INTO santiago_munoz_processed_commands" in mock_db.execute.call_args_list[3][0][0]
+    assert "INSERT INTO santiago_munoz_write.processed_commands" in mock_db.execute.call_args_list[3][0][0]
 
 def test_create_todo_idempotency_flow(mock_db, mock_context):
     """

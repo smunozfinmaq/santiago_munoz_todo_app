@@ -1,24 +1,22 @@
 BEGIN;
 
-CREATE TYPE santiago_munoz_todo_priority AS ENUM ('Low', 'Medium', 'High');
+CREATE SCHEMA IF NOT EXISTS santiago_munoz_write;
 
-CREATE TABLE santiago_munoz_todos (
+CREATE TYPE santiago_munoz_write.todo_priority AS ENUM ('Low', 'Medium', 'High');
+
+CREATE TABLE santiago_munoz_write.todos (
     id UUID PRIMARY KEY,
     title VARCHAR(500) NOT NULL,
     description VARCHAR(500),
-    priority santiago_munoz_todo_priority,
+    priority santiago_munoz_write.todo_priority,
     due_date TIMESTAMPTZ,
     is_completed BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_santiago_munoz_todo_is_completed ON santiago_munoz_todos(is_completed);
-CREATE INDEX idx_santiago_munoz_todo_created_at ON santiago_munoz_todos(created_at DESC);
-CREATE INDEX idx_santiago_munoz_todo_due_date ON santiago_munoz_todos(due_date ASC);
-
 -- Idempotency tracking
-CREATE TABLE santiago_munoz_processed_commands (
+CREATE TABLE santiago_munoz_write.processed_commands (
     command_id UUID PRIMARY KEY,
     result_status INTEGER NOT NULL,
     result_body JSONB,
@@ -26,7 +24,7 @@ CREATE TABLE santiago_munoz_processed_commands (
 );
 
 -- Outbox for CQRS events
-CREATE TABLE santiago_munoz_outbox (
+CREATE TABLE santiago_munoz_write.outbox (
     id BIGSERIAL PRIMARY KEY,
     aggregate_id UUID NOT NULL,
     event_type VARCHAR(100) NOT NULL,

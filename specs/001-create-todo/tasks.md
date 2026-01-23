@@ -9,7 +9,7 @@ We will follow an incremental approach, starting with the project foundation and
 - [X] T003 [P] Create `todo/write/requirements-dev.txt` with `pytest` and `hypothesis`
 
 ## Phase 2: Foundational
-- [X] T004 Create Sqitch project in `todo/db` and define schema for `todos`, `processed_commands`, and `outbox`
+- [X] T004 Create Sqitch project in `todo/db` and define separate schemas using `create_read_schema.sql` and `create_write_schema.sql` for CQRS separation
 - [X] T005 Implement PostgreSQL connection helper using `psycopg` in `todo/write/src/infra/db.py`
 - [X] T006 [P] Implement base `CommandEnvelope` and `Result` shapes in `todo/write/src/app/commands.py`
 
