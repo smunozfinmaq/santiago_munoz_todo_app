@@ -1,0 +1,14 @@
+============================= test session starts =============================
+platform win32 -- Python 3.12.3, pytest-9.0.2, pluggy-1.6.0 -- C:\Users\ASUS\OneDrive - FINANCIAMOS SU MAQUINA S A S\FinMaq\Github\santiago_munoz_todo_app\.venv\Scripts\python.exe
+cachedir: .pytest_cache
+hypothesis profile 'default'
+rootdir: C:\Users\ASUS\OneDrive - FINANCIAMOS SU MAQUINA S A S\FinMaq\Github\santiago_munoz_todo_app
+configfile: pyproject.toml
+plugins: hypothesis-6.150.2, mock-3.15.1, postgresql-7.0.2
+collecting ... collected 3 items
+
+todo/write/tests/unit/test_command_handlers.py::test_handler_valid_inputs PASSED [ 33%]
+todo/write/tests/unit/test_command_handlers.py::test_handler_invalid_priority PASSED [ 66%]
+todo/write/tests/unit/test_command_handlers.py::test_handler_invalid_date PASSED [100%]
+
+============================== 3 passed in 1.83s ==============================

@@ -15,7 +15,7 @@ class TodoRepository:
         with get_db_transaction() as cur:
             # 1. Idempotency Check
             cur.execute(
-                "SELECT result_status, result_body FROM santiago_munoz_processed_commands WHERE command_id = %s",
+                "SELECT result_status, result_body FROM santiago_munoz_write.processed_commands WHERE command_id = %s",
                 (command_id,)
             )
             existing = cur.fetchone()
@@ -28,7 +28,7 @@ class TodoRepository:
             # 2. Insert Todo
             cur.execute(
                 """
-                INSERT INTO santiago_munoz_todos (id, title, description, priority, due_date, is_completed, created_at, updated_at)
+                INSERT INTO santiago_munoz_write.todos (id, title, description, priority, due_date, is_completed, created_at, updated_at)
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
                 """,
                 (
@@ -49,7 +49,7 @@ class TodoRepository:
             }
             cur.execute(
                 """
-                INSERT INTO santiago_munoz_outbox (aggregate_id, event_type, payload)
+                INSERT INTO santiago_munoz_write.outbox (aggregate_id, event_type, payload)
                 VALUES (%s, %s, %s)
                 """,
                 (todo.id, "TodoCreated", json.dumps(event_payload))
@@ -67,6 +67,6 @@ class TodoRepository:
                 "updated_at": todo.updated_at.isoformat()
             }
             cur.execute(
-                "INSERT INTO santiago_munoz_processed_commands (command_id, result_status, result_body) VALUES (%s, %s, %s)",
+                "INSERT INTO santiago_munoz_write.processed_commands (command_id, result_status, result_body) VALUES (%s, %s, %s)",
                 (command_id, 201, json.dumps(result_body))
             )

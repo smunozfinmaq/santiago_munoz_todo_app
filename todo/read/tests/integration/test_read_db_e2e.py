@@ -3,7 +3,7 @@ import json
 from uuid import uuid4
 from unittest.mock import MagicMock
 from datetime import datetime
-from todo.write.src.entrypoints.api import lambda_handler as write_handler
+from todo.read.src.entrypoints.consume_events import lambda_handler as projection_handler
 from todo.read.src.entrypoints.api import lambda_handler as query_handler
 
 @pytest.fixture(scope="function")
@@ -28,19 +28,39 @@ def mock_db(mocker):
     
     return mock_cursor
 
-def test_read_side_list_flow(mock_db, mock_context):
+def test_read_side_e2e_flow(mock_db, mock_context):
     """
-    Tests the list query flow using mocks.
+    Tests the flow: Event -> Projection -> Read Model (Mocked) -> Query API.
     """
     todo_id = str(uuid4())
+    event_id = str(uuid4())
     now = datetime.now()
     
-    # Configure mock for query side
+    # 1. Project an event
+    mock_db.fetchone.return_value = None # Idempotency check: not processed
+    
+    projection_event = {
+        "event_id": event_id,
+        "event_type": "TodoCreated",
+        "payload": {
+            "id": todo_id,
+            "title": "Queryable Todo",
+            "description": "I can see this in the list",
+            "priority": "Medium",
+            "created_at": now.isoformat()
+        }
+    }
+    projection_handler(projection_event, mock_context)
+    
+    # Verify projection insert
+    assert "INSERT INTO santiago_munoz_read.todos" in mock_db.execute.call_args_list[1][0][0]
+
+    # 2. Query the API
     mock_db.fetchall.return_value = [
         {
             "id": todo_id,
-            "title": "Mocked Todo",
-            "description": "Visible in list",
+            "title": "Queryable Todo",
+            "description": "I can see this in the list",
             "priority": "Medium",
             "due_date": None,
             "is_completed": False,
@@ -59,17 +79,15 @@ def test_read_side_list_flow(mock_db, mock_context):
     }
     
     response = query_handler(query_event, mock_context)
-    
     assert response["statusCode"] == 200
-    body = json.loads(response["body"])
     
+    body = json.loads(response["body"])
     assert body["metadata"]["total_count"] == 1
     assert body["items"][0]["id"] == todo_id
-    assert body["items"][0]["title"] == "Mocked Todo"
+    assert body["items"][0]["title"] == "Queryable Todo"
     
-    # Verify the query was correct
-    assert "FROM santiago_munoz_todos" in mock_db.execute.call_args_list[0][0][0]
-    assert "WHERE is_completed = %s" in mock_db.execute.call_args_list[0][0][0]
+    # Verify query table
+    assert "FROM santiago_munoz_read.todos" in mock_db.execute.call_args_list[3][0][0]
 
 def test_read_side_empty_list(mock_db, mock_context):
     """
