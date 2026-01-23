@@ -4,6 +4,7 @@ Auto-generated from all feature plans. Last updated: 2026-01-20
 
 ## Active Technologies
 - Aurora RDS PostgreSQL (authoritative datastore for write side, read models for read side) (001-create-todo)
+- Aurora RDS PostgreSQL (Read models optimized for queries) (002-list-todos)
 
 - Python 3.11+ (AWS Lambda runtime) + `psycopg` (PostgreSQL driver), `aws-lambda-powertools` (Python), `pytest` (testing), `hypothesis` (property-based testing) (001-create-todo)
 
@@ -23,10 +24,10 @@ cd src; pytest; ruff check .
 Python 3.11+ (AWS Lambda runtime): Follow standard conventions
 
 ## Recent Changes
+- 002-list-todos: Added Python 3.11+ (AWS Lambda runtime) + `psycopg` (PostgreSQL driver), `aws-lambda-powertools` (Python), `pytest` (testing), `hypothesis` (property-based testing)
 - 001-create-todo: Added Python 3.11+ (AWS Lambda runtime) + `psycopg` (PostgreSQL driver), `aws-lambda-powertools` (Python), `pytest` (testing), `hypothesis` (property-based testing)
 - 001-create-todo: Added Python 3.11+ (AWS Lambda runtime) + `psycopg` (PostgreSQL driver), `aws-lambda-powertools` (Python), `pytest` (testing), `hypothesis` (property-based testing)
 
-- 001-create-todo: Added Python 3.11+ (AWS Lambda runtime) + `psycopg` (PostgreSQL driver), `aws-lambda-powertools` (Python), `pytest` (testing), `hypothesis` (property-based testing)
 
 <!-- MANUAL ADDITIONS START -->
 <!-- MANUAL ADDITIONS END -->

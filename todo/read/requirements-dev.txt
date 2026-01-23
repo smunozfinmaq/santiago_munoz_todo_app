@@ -1,0 +1,6 @@
+pytest
+hypothesis
+pytest-postgresql
+pytest-mock
+ruff
+mypy
