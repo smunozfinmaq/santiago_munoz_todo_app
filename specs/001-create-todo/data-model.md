@@ -19,13 +19,13 @@ Represented in `write/src/domain/model.py`.
 ## Database Schema (Write Side)
 
 ```sql
-CREATE TYPE todo_priority AS ENUM ('Low', 'Medium', 'High');
+CREATE TYPE santiago_munoz_todo_priority AS ENUM ('Low', 'Medium', 'High');
 
-CREATE TABLE todos (
+CREATE TABLE santiago_munoz_todos (
     id UUID PRIMARY KEY,
     title VARCHAR(500) NOT NULL,
     description VARCHAR(500),
-    priority todo_priority,
+    priority santiago_munoz_todo_priority,
     due_date TIMESTAMPTZ,
     is_completed BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -33,7 +33,7 @@ CREATE TABLE todos (
 );
 
 -- Idempotency tracking
-CREATE TABLE processed_commands (
+CREATE TABLE santiago_munoz_processed_commands (
     command_id UUID PRIMARY KEY,
     result_status INTEGER NOT NULL,
     result_body JSONB,
@@ -41,7 +41,7 @@ CREATE TABLE processed_commands (
 );
 
 -- Outbox for CQRS events
-CREATE TABLE outbox (
+CREATE TABLE santiago_munoz_outbox (
     id BIGSERIAL PRIMARY KEY,
     aggregate_id UUID NOT NULL,
     event_type VARCHAR(100) NOT NULL,

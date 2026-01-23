@@ -13,10 +13,10 @@ Implement the "Create Todo" functionality using a CQRS-based serverless architec
 
 **Language/Version**: Python 3.11+ (AWS Lambda runtime)  
 **Primary Dependencies**: `psycopg` (PostgreSQL driver), `aws-lambda-powertools` (Python), `pytest` (testing), `hypothesis` (property-based testing)  
-**Storage**: Aurora RDS PostgreSQL (authoritative datastore for write side, read models for read side)  
+**Storage**: Aurora RDS PostgreSQL (authoritative datastore using santiago_munoz_ prefixed tables)  
 **Testing**: `pytest`, `hypothesis` (property-based testing), local PostgreSQL containers for integration tests  
 **Target Platform**: AWS Lambda (serverless), Aurora PostgreSQL  
-**Project Type**: Bounded Context (CQRS pattern with write/read separation)  
+**Project Type**: Bounded Context (Shared table architecture with prefix)  
 **Performance Goals**: 
 - Create/retrieve operations: <2 seconds (per SC-001)
 - State change log retrieval: <1 second (per SC-005)
@@ -74,10 +74,10 @@ todo/                     # Bounded Context name
       domain/             # Pure logic: model.py (Aggregate), events.py
       infra/              # Side effects: db.py (psycopg), repo.py (SQL), outbox.py
     tests/                # Unit (Hypothesis) and Integration (Postgres container) tests
-  read/                   # todo-read deployment unit (Query Side)
+  read/                   # todo-read deployment unit
     src/
-      entrypoints/        # api.py (Queries), consume_events.py (Projection updater)
-      app/                # queries.py, projections.py
+      entrypoints/        # api.py (Queries)
+      app/                # queries.py
       infra/              # db.py, repo.py
     tests/                # Unit and Integration tests
 ```

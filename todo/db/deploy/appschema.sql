@@ -1,20 +1,24 @@
 BEGIN;
 
-CREATE TYPE todo_priority AS ENUM ('Low', 'Medium', 'High');
+CREATE TYPE santiago_munoz_todo_priority AS ENUM ('Low', 'Medium', 'High');
 
-CREATE TABLE todos (
+CREATE TABLE santiago_munoz_todos (
     id UUID PRIMARY KEY,
     title VARCHAR(500) NOT NULL,
     description VARCHAR(500),
-    priority todo_priority,
+    priority santiago_munoz_todo_priority,
     due_date TIMESTAMPTZ,
     is_completed BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+CREATE INDEX idx_santiago_munoz_todo_is_completed ON santiago_munoz_todos(is_completed);
+CREATE INDEX idx_santiago_munoz_todo_created_at ON santiago_munoz_todos(created_at DESC);
+CREATE INDEX idx_santiago_munoz_todo_due_date ON santiago_munoz_todos(due_date ASC);
+
 -- Idempotency tracking
-CREATE TABLE processed_commands (
+CREATE TABLE santiago_munoz_processed_commands (
     command_id UUID PRIMARY KEY,
     result_status INTEGER NOT NULL,
     result_body JSONB,
@@ -22,7 +26,7 @@ CREATE TABLE processed_commands (
 );
 
 -- Outbox for CQRS events
-CREATE TABLE outbox (
+CREATE TABLE santiago_munoz_outbox (
     id BIGSERIAL PRIMARY KEY,
     aggregate_id UUID NOT NULL,
     event_type VARCHAR(100) NOT NULL,

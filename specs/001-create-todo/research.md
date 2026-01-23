@@ -6,7 +6,7 @@
 - **Problem**: In a serverless/distributed environment, a client might retry a `POST /todos` request if they don't receive a response (e.g., due to a timeout), leading to duplicate todos.
 - **Solution**: The API will require a `X-Command-ID` header (UUID) for any state-changing operation.
 - **Implementation**: 
-  - Save the `command_id` in a dedicated `processed_commands` table or as a unique constraint in the `todos` table if one-to-one mapping exists.
+  - Save the `command_id` in a dedicated `santiago_munoz_processed_commands` table.
   - Wrap the check-and-insert in a single PostgreSQL transaction.
 - **Rationale**: Provides absolute guarantees against double-creation without complex distributed locks.
 

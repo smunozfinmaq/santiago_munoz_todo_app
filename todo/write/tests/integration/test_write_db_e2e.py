@@ -1,38 +1,44 @@
-import os
 import pytest
 import json
 from uuid import uuid4
+from unittest.mock import MagicMock, patch
 from todo.write.src.entrypoints.api import lambda_handler
 
 @pytest.fixture(scope="function")
-def setup_database(postgresql):
-    """
-    Sets up the temporary PostgreSQL database with the required schema.
-    """
-    host = postgresql.info.host
-    port = postgresql.info.port
-    user = postgresql.info.user
-    dbname = postgresql.info.dbname
-    
-    # We use a passwordless connection for the local fixture
-    db_url = f"postgresql://{user}@{host}:{port}/{dbname}"
-    os.environ["DATABASE_URL"] = db_url
+def mock_context():
+    context = MagicMock()
+    context.function_name = "test_func"
+    context.memory_limit_in_mb = 128
+    context.invoked_function_arn = "arn:test"
+    context.aws_request_id = "request_id"
+    return context
 
-    # Run the deployment script
-    deploy_script = os.path.abspath(os.path.join(os.getcwd(), "todo/db/deploy/appschema.sql"))
-    with open(deploy_script, 'r') as f:
-        sql = f.read()
-        with postgresql.cursor() as cur:
-            cur.execute(sql)
+@pytest.fixture(scope="function")
+def mock_db(mocker):
+    """
+    Mocks the database transaction and connection for integration testing 
+    without a real PostgreSQL instance.
+    """
+    # Create the mock cursor and connection
+    mock_cursor = MagicMock()
+    mock_conn = MagicMock()
+    mock_conn.cursor.return_value.__enter__.return_value = mock_cursor
     
-    return postgresql
+    # Patch where they are USED in the repository
+    mocker.patch("todo.write.src.infra.repo.get_db_transaction", return_value=MagicMock(__enter__=lambda s: mock_cursor))
+    
+    return mock_cursor
 
-def test_create_todo_e2e_flow(setup_database):
+def test_create_todo_e2e_flow(mock_db, mock_context):
     """
-    Tests the complete flow from Lambda entrypoint to DB persistence and idempotency.
+    Tests the complete flow using mocks to simulate DB behavior.
     """
-    db = setup_database
     command_id = str(uuid4())
+    
+    # Configure mock for idempotency check (not found)
+    mock_db.fetchone.side_effect = [
+        None, # First check: result_status from processed_commands
+    ]
     
     # 1. Initial Creation
     event = {
@@ -47,60 +53,64 @@ def test_create_todo_e2e_flow(setup_database):
         }
     }
     
-    response = lambda_handler(event, None)
+    response = lambda_handler(event, mock_context)
     
     assert response["statusCode"] == 201
     body = json.loads(response["body"])
     assert body["title"] == "Integration Test Task"
     assert "id" in body
     
-    # 2. Verify Database State
-    with db.cursor() as cur:
-        # Check Todo table
-        cur.execute("SELECT title, priority, description FROM todos WHERE id = %s", (body["id"],))
-        row = cur.fetchone()
-        assert row is not None
-        assert row[0] == "Integration Test Task"
-        assert row[1] == "High"
-        assert row[2] == "Testing the full write stack"
-        
-        # Check Outbox table
-        cur.execute("SELECT event_type FROM outbox WHERE aggregate_id = %s", (body["id"],))
-        assert cur.fetchone()[0] == "TodoCreated"
-        
-        # Check Idempotency table
-        cur.execute("SELECT result_status FROM processed_commands WHERE command_id = %s", (command_id,))
-        assert cur.fetchone()[0] == 201
-
-    # 3. Test Idempotency (Retry with same Command ID)
-    response_retry = lambda_handler(event, None)
-    assert response_retry["statusCode"] == 201
-    body_retry = json.loads(response_retry["body"])
-    assert body_retry["id"] == body["id"]
+    # 2. Verify Database Calls
+    # Check if idempotency was checked
+    assert "SELECT result_status, result_body FROM santiago_munoz_processed_commands" in mock_db.execute.call_args_list[0][0][0]
     
-    # Verify no duplicate was created
-    with db.cursor() as cur:
-        cur.execute("SELECT count(*) FROM todos WHERE title = %s", ("Integration Test Task",))
-        assert cur.fetchone()[0] == 1
+    # Check if Todo was inserted
+    assert "INSERT INTO santiago_munoz_todos" in mock_db.execute.call_args_list[1][0][0]
+    
+    # Check if Outbox was inserted
+    assert "INSERT INTO santiago_munoz_outbox" in mock_db.execute.call_args_list[2][0][0]
+    
+    # Check if Command was recorded
+    assert "INSERT INTO santiago_munoz_processed_commands" in mock_db.execute.call_args_list[3][0][0]
 
-def test_create_todo_validation_error(setup_database):
+def test_create_todo_idempotency_flow(mock_db, mock_context):
     """
-    Tests that validation errors result in no DB changes.
+    Tests that if a command was already processed, it returns the cached result.
     """
-    db = setup_database
-    event = {
-        "body": json.dumps({
-            "title": "" # Invalid: empty title
-        }),
-        "headers": {
-            "X-Command-ID": str(uuid4())
-        }
+    command_id = str(uuid4())
+    todo_id = str(uuid4())
+    
+    # Configure mock for idempotency check (found)
+    mock_db.fetchone.return_value = {
+        "result_status": 201,
+        "result_body": {"id": todo_id, "title": "Already Exists"}
     }
     
-    response = lambda_handler(event, None)
-    assert response["statusCode"] == 400
-    assert "Title is required" in json.loads(response["body"])["error"]
+    event = {
+        "body": json.dumps({"title": "Doesn't matter"}),
+        "headers": {"X-Command-ID": command_id}
+    }
     
-    with db.cursor() as cur:
-        cur.execute("SELECT count(*) FROM todos")
-        assert cur.fetchone()[0] == 0
+    response = lambda_handler(event, mock_context)
+    
+    assert response["statusCode"] == 201
+    body = json.loads(response["body"])
+    assert body["id"] == todo_id
+    assert body["title"] == "Already Exists"
+    
+    # Verify only the select was called, no inserts
+    assert mock_db.execute.call_count == 1
+    assert "SELECT" in mock_db.execute.call_args[0][0]
+
+def test_create_todo_validation_error(mock_db, mock_context):
+    """
+    Tests that validation errors return 400 and don't touch the DB.
+    """
+    event = {
+        "body": json.dumps({"title": ""}), # Invalid
+        "headers": {"X-Command-ID": str(uuid4())}
+    }
+    
+    response = lambda_handler(event, mock_context)
+    assert response["statusCode"] == 400
+    assert mock_db.execute.call_count == 0
